@@ -1,0 +1,54 @@
+:root {
+  --bg-dark: #0a0a0c;
+  --bg-panel: #1a1a1e;
+  --bg-panel-light: #2a2a32;
+  --accent-red: #ff3e3e;
+  --accent-green: #00ff88;
+  --accent-blue: #0088ff;
+  --accent-yellow: #ffcc00;
+  --text-main: #e0e0e0;
+  --text-dim: #888888;
+  --shadow-neon: 0 0 15px rgba(255, 62, 62, 0.4);
+  --font-timer: 'Digital-7', monospace; /* I'll use a fallback or import a font */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: default;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-panel-light);
+  border-radius: 10px;
+}
