@@ -42,7 +42,8 @@ const INITIAL_CONFIG = [
     ports: ["DVI", "Serial"],
     chips: [{ id: 'C1', label: 'MT-40', isCorrect: true }],
     resistors: [{ id: 'R1', color: '#b91c1c' }, { id: 'R2', color: '#1d4ed8' }],
-    leds: [{ id: 'L1', label: 'PWR', color: '#ef4444', linkedSwitch: 'A' }]
+    leds: [{ id: 'L1', label: 'PWR', color: '#ef4444', linkedSwitch: 'A' }],
+    hasExit: true
   },
   {
     id: 2,
@@ -69,7 +70,8 @@ const INITIAL_CONFIG = [
     ports: ["Parallel", "RJ-45"],
     chips: [],
     resistors: [{ id: 'R1', color: '#facc15' }],
-    leds: [{ id: 'L1', label: 'LINK', color: '#22c55e', linkedSwitch: 'B' }, { id: 'L2', label: 'DATA', color: '#3b82f6', linkedSwitch: 'C' }]
+    leds: [{ id: 'L1', label: 'LINK', color: '#22c55e', linkedSwitch: 'B' }, { id: 'L2', label: 'DATA', color: '#3b82f6', linkedSwitch: 'C' }],
+    hasExit: true
   },
   {
     id: 3,
@@ -98,12 +100,16 @@ const INITIAL_CONFIG = [
     ports: ["DVI", "Parallel", "Serial"],
     chips: [{ id: 'C1', label: 'CPU-X', isCorrect: true }, { id: 'C2', label: 'BIO-2', isCorrect: false }],
     resistors: [{ id: 'R1', color: '#9333ea' }, { id: 'R2', color: '#db2777' }],
-    leds: [{ id: 'L1', label: 'SYNC', color: '#a855f7', linkedSwitch: 'A' }]
+    leds: [{ id: 'L1', label: 'SYNC', color: '#a855f7', linkedSwitch: 'A' }],
+    hasExit: true
   }
 ];
 
 function App() {
-  const [rooms, setRooms] = useState({ '123456': INITIAL_CONFIG });
+  const [rooms, setRooms] = useState(() => {
+    const saved = localStorage.getItem('bombDefusalRooms');
+    return saved ? JSON.parse(saved) : { '123456': INITIAL_CONFIG };
+  });
   const [currentRoomCode, setCurrentRoomCode] = useState("");
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -120,9 +126,15 @@ function App() {
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [feedback, setFeedback] = useState("");
   const [wallet, setWallet] = useState(0);
+  const [exitActivated, setExitActivated] = useState(false);
 
   const timerRef = useRef(null);
   const currentLevel = config[currentLevelIdx];
+
+  // Save rooms to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('bombDefusalRooms', JSON.stringify(rooms));
+  }, [rooms]);
 
   const handleCreateRoom = () => {
     setIsAdmin(true);
@@ -131,9 +143,25 @@ function App() {
 
   const handleGenerateRoomCode = () => {
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setRooms(prev => ({ ...prev, [newCode]: config }));
+    const newRooms = { ...rooms, [newCode]: config };
+    setRooms(newRooms);
     setCurrentRoomCode(newCode);
-    alert(`MISSION BROADCASTED! ROOM CODE: ${newCode}`);
+    
+    // Also download as JSON file
+    const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
+    const filename = `bomb_mission_${newCode}_${timestamp}.json`;
+    const dataStr = JSON.stringify({ roomCode: newCode, config: config, timestamp: new Date().toISOString() }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(`MISSION BROADCASTED!\nROOM CODE: ${newCode}\n\nFile saved to Downloads folder!`);
   };
 
   const handleJoinRoom = () => {
@@ -159,6 +187,7 @@ function App() {
     setEnteredCode("");
     setIsPenaltyActive(false);
     setFeedback("");
+    setExitActivated(false);
   };
 
   const nextLevel = () => {
@@ -166,7 +195,10 @@ function App() {
       setCurrentLevelIdx(prev => prev + 1);
       setGameState('ready');
     } else {
-      setGameState('victory');
+      // After last level, go to joining screen instead of victory
+      setCurrentLevelIdx(0);
+      setGameState('joining');
+      setWallet(0);
       confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
     }
   };
@@ -206,6 +238,59 @@ function App() {
     }
   };
 
+  const handleExit = (e) => {
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+    
+    // Prevent multiple clicks
+    if (gameState !== 'playing' || !currentLevel.hasExit || exitActivated) return;
+
+    const reqSwitches = currentLevel.switches || [];
+    const switchErr = reqSwitches.some(s => (s.isCorrect && !activeSwitches[s.id]) || (!s.isCorrect && activeSwitches[s.id]));
+    const reqLevers = currentLevel.levers || [];
+    const leverErr = reqLevers.some(l => (l.isCorrect && !activeLevers[l.id]) || (!l.isCorrect && activeLevers[l.id]));
+    const reqKnobs = currentLevel.knobs || [];
+    const knobErr = reqKnobs.some(k => (knobPositions[k.id] || 0) !== k.isCorrect);
+    const reqKeys = currentLevel.keys || [];
+    const keyErr = reqKeys.some(k => (k.isCorrect && !keyStates[k.id]) || (!k.isCorrect && keyStates[k.id]));
+
+    // Validate all conditions first, don't trigger penalty yet
+    if (switchErr) {
+      setFeedback("ERROR: SWITCHES NOT CONFIGURED");
+      return;
+    }
+    if (leverErr) {
+      setFeedback("ERROR: LEVERS NOT IN POSITION");
+      return;
+    }
+    if (knobErr) {
+      setFeedback("ERROR: DIALS NOT ALIGNED");
+      return;
+    }
+    if (keyErr) {
+      setFeedback("ERROR: KEYS NOT TURNED");
+      return;
+    }
+
+    if (currentLevel.hasKeypad && enteredCode !== currentLevel.keypadCode) {
+      setFeedback("ERROR: CODE SEQUENCE MISMATCH");
+      return;
+    }
+
+    // Check if all wires are cut
+    const allWiresCut = currentLevel.wires.every(w => cutWires.includes(w.id));
+    if (!allWiresCut) {
+      setFeedback("ERROR: ALL CIRCUITS MUST BE SEVERED");
+      return;
+    }
+
+    // Mark as activated FIRST to prevent re-clicks
+    setExitActivated(true);
+    setGameState('success');
+    setWallet(prev => prev + 100);
+    setFeedback("MISSION COMPLETE - EXIT SECURED");
+  };
+
   const triggerPenalty = () => setIsPenaltyActive(true);
 
   useEffect(() => {
@@ -226,6 +311,55 @@ function App() {
     }
     return () => clearInterval(timerRef.current);
   }, [gameState, isPenaltyActive]);
+
+  // --- Keyboard/Numpad Support ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Skip if focused on input, textarea, or select element
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      // Only handle keypad input when in menu state (joining)
+      if (gameState !== 'menu') return;
+
+      // Check if it's a numpad number (0-9)
+      if (e.code.startsWith('Numpad')) {
+        const digit = e.code.replace('Numpad', '');
+        if (/^\d$/.test(digit)) {
+          e.preventDefault();
+          setJoinCodeInput(p => (p + digit).slice(0, 6));
+          return;
+        }
+      }
+
+      // Also support regular number keys
+      if (e.key >= '0' && e.key <= '9' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        setJoinCodeInput(p => (p + e.key).slice(0, 6));
+        return;
+      }
+
+      // Handle Backspace to delete last digit
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        setJoinCodeInput(p => p.slice(0, -1));
+        return;
+      }
+
+      // Handle Enter to submit code
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (joinCodeInput.length === 6) {
+          handleJoinRoom();
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, joinCodeInput]);
 
   // --- Admin Logic ---
   const updateLvl = (idx, field, val) => {
@@ -358,6 +492,93 @@ function App() {
     setConfig(next);
   };
 
+  // Export all missions to JSON file
+  const handleExportAllMissions = () => {
+    const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
+    const filename = `all_bomb_missions_${timestamp}.json`;
+    const dataStr = JSON.stringify({ missions: rooms, exportDate: new Date().toISOString() }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('✓ All missions exported to Downloads!');
+  };
+
+  // Import missions from JSON file
+  const handleImportMissions = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target?.result);
+        let newRooms = { ...rooms };
+        let importedCount = 0;
+
+        // Handle "Export All" format (missions object)
+        if (importedData.missions && typeof importedData.missions === 'object') {
+          newRooms = { ...newRooms, ...importedData.missions };
+          importedCount = Object.keys(importedData.missions).length;
+        }
+        // Handle "Export Current Config" format (single config with roomCode)
+        else if (importedData.config && Array.isArray(importedData.config) && importedData.roomCode) {
+          newRooms[importedData.roomCode] = importedData.config;
+          importedCount = 1;
+        }
+        // Handle single room broadcast format
+        else if (importedData.config && Array.isArray(importedData.config)) {
+          const roomCode = Math.floor(100000 + Math.random() * 900000).toString();
+          newRooms[roomCode] = importedData.config;
+          importedCount = 1;
+        }
+        // Handle array format directly
+        else if (Array.isArray(importedData)) {
+          const roomCode = Math.floor(100000 + Math.random() * 900000).toString();
+          newRooms[roomCode] = importedData;
+          importedCount = 1;
+        }
+        else {
+          alert('✗ Invalid file format. Please export from the game first.');
+          return;
+        }
+
+        if (importedCount > 0) {
+          setRooms(newRooms);
+          alert(`✓ Imported ${importedCount} mission(s)!`);
+        } else {
+          alert('✗ No valid missions found in file.');
+        }
+      } catch (err) {
+        alert('✗ Error reading file: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+  };
+
+  // Export current working config
+  const handleExportCurrentConfig = () => {
+    const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
+    const filename = `bomb_config_${timestamp}.json`;
+    const dataStr = JSON.stringify({ config: config, exportDate: new Date().toISOString() }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    alert('✓ Current config exported to Downloads!');
+  };
+
   // --- Views ---
   if (isAdmin) {
     return (
@@ -372,6 +593,12 @@ function App() {
               <Plus size={18} /> NEW MISSION
             </button>
             <button className="btn-broadcast" onClick={handleGenerateRoomCode}><Zap size={18} /> BROADCAST</button>
+            <button className="btn-broadcast" style={{ background: '#0088ff', color: '#fff' }} onClick={handleExportCurrentConfig}><Save size={18} /> EXPORT CONFIG</button>
+            <button className="btn-broadcast" style={{ background: '#ff9900', color: '#000' }} onClick={handleExportAllMissions}><Save size={18} /> EXPORT ALL</button>
+            <label className="btn-broadcast" style={{ background: '#9933ff', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <span>📥 IMPORT</span>
+              <input type="file" accept=".json" onChange={handleImportMissions} style={{ display: 'none' }} />
+            </label>
             <button className="btn-close-admin" onClick={() => setIsAdmin(false)}><Save size={20} /> SAVE & EXIT</button>
           </div>
         </header>
@@ -408,7 +635,7 @@ function App() {
                 {lvl.hasKeypad && (
                   <div className="input-group">
                     <label><Zap size={12} /> Keypad Code</label>
-                    <input value={lvl.keypadCode} onChange={e => updateLvl(idx, 'keypadCode', e.target.value)} />
+                    <input type="text" value={lvl.keypadCode} onChange={e => updateLvl(idx, 'keypadCode', e.target.value)} placeholder="e.g., 1234" />
                   </div>
                 )}
               </div>
@@ -421,6 +648,7 @@ function App() {
               <div className="checkbox-row-premium">
                 <label className="check-premium"><input type="checkbox" checked={lvl.hasKeypad} onChange={e => updateLvl(idx, 'hasKeypad', e.target.checked)} /> <span>Digital Keypad</span></label>
                 <label className="check-premium"><input type="checkbox" checked={lvl.hasButtons} onChange={e => updateLvl(idx, 'hasButtons', e.target.checked)} /> <span>Contact Detonator</span></label>
+                <label className="check-premium"><input type="checkbox" checked={lvl.hasExit} onChange={e => updateLvl(idx, 'hasExit', e.target.checked)} /> <span>Exit Mission</span></label>
               </div>
 
               {/* Component Managers */}
@@ -577,6 +805,39 @@ function App() {
               </div>
             </div>
           ))}
+
+          {/* Saved Broadcasts Section */}
+          {Object.keys(rooms).length > 0 && (
+            <div className="saved-broadcasts-panel">
+              <div className="lvl-config-header">
+                <ShieldAlert size={20} className="lvl-icon" />
+                <h3>SAVED BROADCASTS</h3>
+              </div>
+              <div className="broadcasts-grid">
+                {Object.entries(rooms).map(([code, roomConfig]) => (
+                  <div key={code} className="broadcast-card">
+                    <div className="broadcast-header">
+                      <span className="broadcast-code">{code}</span>
+                      <button 
+                        className="btn-del" 
+                        onClick={() => {
+                          const newRooms = { ...rooms };
+                          delete newRooms[code];
+                          setRooms(newRooms);
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="broadcast-info">
+                      <p><strong>Levels:</strong> {roomConfig.length}</p>
+                      {roomConfig[0] && <p><strong>First:</strong> {roomConfig[0].title}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -599,7 +860,9 @@ function App() {
           </div>
         </div>
         <div className="nav-right">
-          <button className="btn-admin" onClick={() => setIsAdmin(true)}><Settings size={20} /></button>
+          {gameState !== 'playing' && (
+            <button className="btn-admin" onClick={() => setIsAdmin(true)}><Settings size={20} /></button>
+          )}
         </div>
       </nav>
 
@@ -628,11 +891,10 @@ function App() {
                   <div className="scan-line"></div>
                   <ShieldAlert size={60} className="menu-icon-small" />
                   <h2>MISSION CONNECTION</h2>
-                  <p>Enter the 6-digit room code to begin operation</p>
-                  <div className="code-input-display">{joinCodeInput.padEnd(6, '-')}</div>
+                  <div className="code-input-display" style={{ fontSize: '4rem', letterSpacing: '0.5rem' }}>{joinCodeInput.padEnd(6, '-')}</div>
                   <div className="keypad-grid join-pad">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(n => (
-                      <button key={n} onClick={() => setJoinCodeInput(p => (p + n).slice(0, 6))}>{n}</button>
+                      <button key={n} style={n === 0 ? { gridColumn: 2 } : {}} onClick={() => setJoinCodeInput(p => (p + n).slice(0, 6))}>{n}</button>
                     ))}
                     <div className="pad-footer" style={{ display: 'contents' }}>
                       <button className="keypad-clr" style={{ gridColumn: 'span 3' }} onClick={() => setJoinCodeInput("")}>CLEAR TERMINAL</button>
@@ -921,13 +1183,29 @@ function App() {
                   </div>
                 )}
 
-                {/* 5. Big Red Button */}
-                {currentLevel.hasButtons && (
+                {/* 5. Big Red Button / Exit Button */}
+                {currentLevel.hasButtons && !currentLevel.hasExit && (
                   <div className="module-big-button">
                     <button className="red-button-3d">
                       <div className="button-surface"></div>
                     </button>
                     <label>ARM</label>
+                  </div>
+                )}
+
+                {/* Exit Mission Button */}
+                {currentLevel.hasExit && (
+                  <div className="module-exit-button">
+                    <motion.button
+                      className={`exit-button-3d ${exitActivated ? 'activated' : ''}`}
+                      onClick={handleExit}
+                      whileHover={{ scale: exitActivated ? 1 : 1.05 }}
+                      whileTap={{ scale: exitActivated ? 1 : 0.95 }}
+                      disabled={exitActivated}
+                    >
+                      <div className="exit-surface"></div>
+                      <span className="exit-label">EXIT</span>
+                    </motion.button>
                   </div>
                 )}
 

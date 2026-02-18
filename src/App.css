@@ -13,6 +13,10 @@
   --digital-green: #39ff14;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
+  /* Added defaults to avoid missing-variable issues used across the stylesheet */
+  --w-color: var(--red-primary); /* default wire color */
+  --r-color: #d4a373;          /* resistor stripe color */
+  --led-color: var(--digital-green); /* led on color */
 }
 
 .app-wrapper {
@@ -231,7 +235,7 @@
   font-size: 3.5rem;
   color: var(--red-primary);
   text-shadow: 0 0 15px var(--red-primary);
-  line-height: 1;
+  line-height: 1.2;
   font-weight: 700;
   animation: pulse-glow 2s infinite alternate;
 }
@@ -641,7 +645,7 @@
 
 .keypad-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
@@ -656,6 +660,12 @@
   cursor: pointer;
   box-shadow: 0 4px 0 #000;
   transition: 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  min-height: 45px;
+  min-width: 45px;
 }
 
 .keypad-grid button:active {
@@ -700,6 +710,81 @@
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.6),
     0 2px 0 #660000;
+}
+
+/* Exit Mission Button */
+.module-exit-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.exit-button-3d {
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle at 30% 30%, #00ff88, #00aa44);
+  border-radius: 50%;
+  border: 8px solid #222;
+  position: relative;
+  box-shadow:
+    0 15px 30px rgba(0, 255, 136, 0.3),
+    0 8px 0 #006622,
+    inset 0 0 20px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exit-button-3d .exit-surface {
+  position: absolute;
+  inset: 8px;
+  background: radial-gradient(circle at 35% 35%, #00ff88, #00aa44);
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.exit-button-3d .exit-label {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+  text-shadow: 0 1px 2px rgba(0, 255, 136, 0.4);
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+.exit-button-3d:not(:disabled):hover {
+  box-shadow:
+    0 18px 35px rgba(0, 255, 136, 0.4),
+    0 8px 0 #006622,
+    inset 0 0 25px rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.exit-button-3d:not(:disabled):active {
+  transform: translateY(6px) scale(0.98);
+  box-shadow:
+    0 8px 20px rgba(0, 255, 136, 0.3),
+    0 2px 0 #006622;
+}
+
+.exit-button-3d:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.exit-button-3d::after {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  border: 1px solid #333;
+  border-radius: 50%;
+  z-index: -1;
+  background: #111;
 }
 
 /* Modals */
@@ -771,8 +856,10 @@
   letter-spacing: 2px;
   font-size: 1.2rem;
   background: linear-gradient(to right, var(--blue-primary), #fff);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .btn-broadcast {
@@ -922,6 +1009,70 @@
   height: 18px;
   cursor: pointer;
   accent-color: var(--blue-primary);
+}
+
+/* Saved Broadcasts Panel */
+.saved-broadcasts-panel {
+  width: 100%;
+  background: #15181e;
+  border: 1px solid #2c3e50;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  margin-top: 40px;
+}
+
+.broadcasts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.broadcast-card {
+  background: #0c0e12;
+  border: 1px solid #2a5f7f;
+  padding: 20px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.broadcast-card:hover {
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.broadcast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.broadcast-code {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--blue-primary);
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+.broadcast-info {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.broadcast-info p {
+  margin: 5px 0;
+}
+
+.broadcast-info strong {
+  color: var(--green-primary);
 }
 
 .manager-box {
@@ -1197,7 +1348,6 @@
   letter-spacing: 1px;
   pointer-events: none;
   z-index: 10;
-  box-shadow: 2px 2px 0 #000;
 }
 
 .serial-tag {
@@ -1316,99 +1466,50 @@
 }
 
 .hologram-flicker {
-  animation: flicker 0.1s infinite alternate;
+  animation: flicker-contrast 0.12s infinite alternate;
 }
 
-@keyframes flicker {
+@keyframes flicker-contrast {
   from {
     opacity: 0.95;
+    filter: contrast(1.1);
   }
 
   to {
     opacity: 1;
+    filter: contrast(1);
   }
 }
 
-.join-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, var(--blue-primary), transparent);
-  animation: flow 2s infinite linear;
-}
-
-@keyframes flow {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
+/* Respect reduced motion preferences to avoid harmful/expensive animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
-.code-input-display {
-  background: #000;
-  color: var(--blue-primary);
-  font-family: 'Space Mono', monospace;
-  font-size: 2rem;
-  padding: 12px;
-  margin: 20px 0;
-  letter-spacing: 10px;
-  border: 2px solid #1a1a1a;
-  text-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 1);
-}
+/* Basic responsive adjustments to avoid overflow on small screens */
+@media (max-width: 900px) {
+  .game-viewport {
+    grid-template-columns: 1fr !important;
+    padding: 20px !important;
+    gap: 20px !important;
+  }
 
-.join-pad {
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 15px !important;
-}
+  .bomb-container {
+    height: auto !important;
+  }
 
-.join-pad button {
-  aspect-ratio: 1;
-  font-size: 1.4rem !important;
-  background: linear-gradient(145deg, #1a1c22, #0d0e12) !important;
-  color: #fff !important;
-  border: 1px solid #222 !important;
-  border-radius: 12px !important;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 0 #000 !important;
-}
+  .bomb-body {
+    width: 90% !important;
+    min-height: 300px !important;
+    padding: 20px !important;
+  }
 
-.join-pad button:last-of-type {
-  grid-column: 2;
-  /* Centering the 0 if there are 10 items */
-}
-
-.join-pad button:hover {
-  background: #333 !important;
-}
-
-.pad-footer {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.pad-footer button {
-  flex: 1;
-  aspect-ratio: auto !important;
-  font-size: 0.75rem !important;
-  padding: 18px !important;
-  background: #15181e !important;
-  color: #666 !important;
-  border: 1px solid #222 !important;
-  text-transform: uppercase;
-  font-weight: 900;
-  letter-spacing: 1px;
+  .game-nav {
+    padding: 12px 20px !important;
+  }
 }
 
 /* --- Electrical Extras Visuals --- */
@@ -1600,7 +1701,7 @@
 
 /* --- Premium UI Components --- */
 .brief-card.industrial {
-  background: #1a1c22;
+  background: #000000;
   border: 2px solid #34495e;
   border-radius: 24px;
   padding: 0;
@@ -1641,7 +1742,7 @@
 }
 
 .clue-display {
-  background: rgba(0, 0, 0, 0.3);
+  background: #1a1a1a;
   padding: 20px;
   border-radius: 12px;
   border-left: 4px solid var(--orange-primary);
@@ -1649,6 +1750,14 @@
   align-items: flex-start;
   gap: 15px;
   text-align: left;
+  color: #ffffff;
+}
+
+.clue-display p {
+  color: #ffffff;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .clue-icon {
@@ -1808,10 +1917,10 @@
 }
 
 .hologram-flicker {
-  animation: flicker 0.1s infinite alternate;
+  animation: flicker-contrast 0.12s infinite alternate;
 }
 
-@keyframes flicker {
+@keyframes flicker-contrast {
   from {
     opacity: 0.95;
     filter: contrast(1.1);
