@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { initializeSheets, saveBroadcast, getBroadcast, getAllBroadcasts, deleteBroadcast, saveGameScore } from './sheets';
 import './App.css';
 
 // --- Constants ---
@@ -129,24 +128,16 @@ function App() {
   const timerRef = useRef(null);
   const currentLevel = config[currentLevelIdx];
 
-  // Load broadcasts from Google Sheets on app start
+  // Load broadcasts from localStorage on app start
   useEffect(() => {
-    initializeSheets();
-    const loadBroadcasts = async () => {
-      try {
-        const allBroadcasts = await getAllBroadcasts();
-        if (allBroadcasts && Object.keys(allBroadcasts).length > 0) {
-          const formattedRooms = {};
-          Object.entries(allBroadcasts).forEach(([code, data]) => {
-            formattedRooms[code] = data.config;
-          });
-          setRooms(prev => ({ ...prev, ...formattedRooms }));
-        }
-      } catch (error) {
-        console.error('Error loading broadcasts:', error);
-      }
-    };
-    loadBroadcasts();
+    const broadcasts = JSON.parse(localStorage.getItem('broadcasts') || '{}');
+    if (broadcasts && Object.keys(broadcasts).length > 0) {
+      const formattedRooms = {};
+      Object.entries(broadcasts).forEach(([code, data]) => {
+        formattedRooms[code] = data.config || data;
+      });
+      setRooms(prev => ({ ...prev, ...formattedRooms }));
+    }
   }, []);
 
   const handleCreateRoom = () => {
