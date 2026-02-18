@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { saveBroadcast, getBroadcast, getAllBroadcasts, deleteBroadcast, saveGameScore } from './firebase';
 import './App.css';
 
 // --- Constants ---
@@ -106,10 +107,7 @@ const INITIAL_CONFIG = [
 ];
 
 function App() {
-  const [rooms, setRooms] = useState(() => {
-    const saved = localStorage.getItem('bombDefusalRooms');
-    return saved ? JSON.parse(saved) : { '123456': INITIAL_CONFIG };
-  });
+  const [rooms, setRooms] = useState({ '123456': INITIAL_CONFIG });
   const [currentRoomCode, setCurrentRoomCode] = useState("");
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -131,46 +129,79 @@ function App() {
   const timerRef = useRef(null);
   const currentLevel = config[currentLevelIdx];
 
-  // Save rooms to localStorage whenever they change
+  // Load broadcasts from Firebase on app start
   useEffect(() => {
-    localStorage.setItem('bombDefusalRooms', JSON.stringify(rooms));
-  }, [rooms]);
+    const loadBroadcasts = async () => {
+      try {
+        const allBroadcasts = await getAllBroadcasts();
+        if (allBroadcasts && Object.keys(allBroadcasts).length > 0) {
+          const formattedRooms = {};
+          Object.entries(allBroadcasts).forEach(([code, data]) => {
+            formattedRooms[code] = data.config;
+          });
+          setRooms(prev => ({ ...prev, ...formattedRooms }));
+        }
+      } catch (error) {
+        console.error('Error loading broadcasts:', error);
+      }
+    };
+    loadBroadcasts();
+  }, []);
 
   const handleCreateRoom = () => {
     setIsAdmin(true);
     setGameState('menu');
   };
 
-  const handleGenerateRoomCode = () => {
+  const handleGenerateRoomCode = async () => {
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const newRooms = { ...rooms, [newCode]: config };
-    setRooms(newRooms);
-    setCurrentRoomCode(newCode);
     
-    // Also download as JSON file
-    const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
-    const filename = `bomb_mission_${newCode}_${timestamp}.json`;
-    const dataStr = JSON.stringify({ roomCode: newCode, config: config, timestamp: new Date().toISOString() }, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    alert(`MISSION BROADCASTED!\nROOM CODE: ${newCode}\n\nFile saved to Downloads folder!`);
+    // Save to Firebase
+    const success = await saveBroadcast(newCode, config);
+    if (success) {
+      const newRooms = { ...rooms, [newCode]: config };
+      setRooms(newRooms);
+      setCurrentRoomCode(newCode);
+      
+      // Download as JSON file too (backup)
+      const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
+      const filename = `bomb_mission_${newCode}_${timestamp}.json`;
+      const dataStr = JSON.stringify({ roomCode: newCode, config: config, timestamp: new Date().toISOString() }, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      alert(`✓ MISSION BROADCASTED!\n\nROOM CODE: ${newCode}\n\nShare this code with others to play together!\nFile saved to Downloads as backup.`);
+    } else {
+      alert('✗ Error broadcasting mission. Please check Firebase config.');
+    }
   };
 
-  const handleJoinRoom = () => {
-    if (rooms[joinCodeInput]) {
+  const handleJoinRoom = async () => {
+    // First try to get from Firebase
+    const broadcastConfig = await getBroadcast(joinCodeInput);
+    
+    if (broadcastConfig) {
+      setConfig(broadcastConfig);
+      setGameState('intro');
+      setCurrentLevelIdx(0);
+      setJoinCodeInput("");
+      // Also save to local rooms for reference
+      setRooms(prev => ({ ...prev, [joinCodeInput]: broadcastConfig }));
+    } else if (rooms[joinCodeInput]) {
+      // Fallback to local rooms if not in Firebase
       setConfig(rooms[joinCodeInput]);
       setGameState('intro');
       setCurrentLevelIdx(0);
+      setJoinCodeInput("");
     } else {
-      setFeedback("MISSION REJECTED: INVALID ROOM KEY");
+      setFeedback("✗ MISSION NOT FOUND: Invalid authentication code");
       setIsPenaltyActive(true);
       setTimeout(() => { setFeedback(""); setIsPenaltyActive(false); }, 1500);
     }
