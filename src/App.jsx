@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { saveBroadcast, getBroadcast, getAllBroadcasts, deleteBroadcast, saveGameScore } from './firebase';
+import { initializeSheets, saveBroadcast, getBroadcast, getAllBroadcasts, deleteBroadcast, saveGameScore } from './sheets';
 import './App.css';
 
 // --- Constants ---
@@ -129,8 +129,9 @@ function App() {
   const timerRef = useRef(null);
   const currentLevel = config[currentLevelIdx];
 
-  // Load broadcasts from Firebase on app start
+  // Load broadcasts from Google Sheets on app start
   useEffect(() => {
+    initializeSheets();
     const loadBroadcasts = async () => {
       try {
         const allBroadcasts = await getAllBroadcasts();
