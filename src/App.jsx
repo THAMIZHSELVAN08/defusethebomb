@@ -1218,7 +1218,7 @@ function App() {
                 )}
 
                 {/* 5. Big Button / Exit Button */}
-                {currentLevel.hasButtons && !currentLevel.hasExit && currentLevel.buttons && (
+                {currentLevel.hasButtons && !currentLevel.hasExit && currentLevel.buttons && currentLevel.buttons.length > 0 && (
                   <div className="module-big-button">
                     {currentLevel.buttons.map(btn => (
                       <button
