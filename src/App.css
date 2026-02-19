@@ -712,6 +712,43 @@
     0 2px 0 #660000;
 }
 
+/* Dynamic Button with CSS Variables */
+.button-3d {
+  --btn-color: #22c55e;
+  --btn-dark: color-mix(in srgb, var(--btn-color) 30%, #000);
+  
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle at 30% 30%, var(--btn-color), var(--btn-dark));
+  border-radius: 50%;
+  border: 8px solid #222;
+  position: relative;
+  box-shadow:
+    0 15px 30px rgba(0, 0, 0, 0.6),
+    0 8px 0 var(--btn-dark),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.button-3d::after {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  border: 1px solid #333;
+  border-radius: 50%;
+  z-index: -1;
+  background: #111;
+}
+
+.button-3d:active,
+.button-3d.pressed {
+  transform: translateY(6px);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.6),
+    0 2px 0 var(--btn-dark);
+}
+
 /* Exit Mission Button */
 .module-exit-button {
   display: flex;

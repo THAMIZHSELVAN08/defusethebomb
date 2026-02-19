@@ -66,6 +66,9 @@ const INITIAL_CONFIG = [
     hasKeypad: false,
     keypadCode: "",
     hasButtons: true,
+    buttons: [
+      { id: 'BTN1', color: '#22c55e', isCorrect: true }
+    ],
     batteries: 3,
     ports: ["Parallel", "RJ-45"],
     chips: [],
@@ -120,6 +123,7 @@ function App() {
   const [activeLevers, setActiveLevers] = useState({});
   const [knobPositions, setKnobPositions] = useState({}); // { id: number }
   const [keyStates, setKeyStates] = useState({}); // { id: boolean }
+  const [buttonPressed, setButtonPressed] = useState({}); // { id: boolean }
   const [enteredCode, setEnteredCode] = useState("");
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -208,6 +212,7 @@ function App() {
     setActiveLevers({});
     setKnobPositions(currentLevel.knobs?.reduce((acc, k) => ({ ...acc, [k.id]: k.current || 0 }), {}) || {});
     setKeyStates({});
+    setButtonPressed({});
     setEnteredCode("");
     setIsPenaltyActive(false);
     setFeedback("");
@@ -225,6 +230,11 @@ function App() {
       setWallet(0);
       confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 } });
     }
+  };
+
+  const checkVictory = () => {
+    setGameState('success');
+    setWallet(prev => prev + 100);
   };
 
   const handleWireCut = (wireId, isCorrect) => {
@@ -1207,13 +1217,45 @@ function App() {
                   </div>
                 )}
 
-                {/* 5. Big Red Button / Exit Button */}
-                {currentLevel.hasButtons && !currentLevel.hasExit && (
+                {/* 5. Big Button / Exit Button */}
+                {currentLevel.hasButtons && !currentLevel.hasExit && currentLevel.buttons && (
                   <div className="module-big-button">
-                    <button className="red-button-3d">
-                      <div className="button-surface"></div>
-                    </button>
-                    <label>ARM</label>
+                    {currentLevel.buttons.map(btn => (
+                      <button
+                        key={btn.id}
+                        className={`button-3d ${buttonPressed[btn.id] ? 'pressed' : ''}`}
+                        style={{ '--btn-color': btn.color }}
+                        onClick={() => {
+                          if (gameState !== 'playing' || buttonPressed[btn.id]) return;
+                          
+                          const reqSwitches = currentLevel.switches || [];
+                          const switchErr = reqSwitches.some(s => (s.isCorrect && !activeSwitches[s.id]) || (!s.isCorrect && activeSwitches[s.id]));
+                          const reqLevers = currentLevel.levers || [];
+                          const leverErr = reqLevers.some(l => (l.isCorrect && !activeLevers[l.id]) || (!l.isCorrect && activeLevers[l.id]));
+                          
+                          if (switchErr || leverErr) {
+                            setFeedback('ERROR: Verify switch/lever positions');
+                            setIsPenaltyActive(true);
+                            setTimeout(() => setIsPenaltyActive(false), 500);
+                            return;
+                          }
+                          
+                          if (!btn.isCorrect) {
+                            setFeedback('ERROR: Wrong button target');
+                            setIsPenaltyActive(true);
+                            setTimeout(() => setIsPenaltyActive(false), 500);
+                            return;
+                          }
+                          
+                          setButtonPressed(prev => ({ ...prev, [btn.id]: true }));
+                          setFeedback('✓ Button pressed - module disarmed');
+                          checkVictory();
+                        }}
+                      >
+                        <div className="button-surface"></div>
+                      </button>
+                    ))}
+                    <label>PRESS TARGET</label>
                   </div>
                 )}
 
