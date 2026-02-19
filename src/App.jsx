@@ -25,14 +25,14 @@ const INITIAL_CONFIG = [
     id: 1,
     type: 'cylinder',
     title: "LEVEL 01",
-    clue: "SWITCH A MUST BE ARMED. PULL LEVER B. THEN CUT RED.",
+    clue: "Arm A,B. All Keys Horizontal. I am the darkest night at sea. In the world of direct current (DC), I am the 'ground'. What color am I? (Wire Target - Black)",
     timer: 60,
     wires: [
-      { id: 'red', color: '#ff3e3e', isCorrect: true },
-      { id: 'blue', color: '#0088ff', isCorrect: false }
+      { id: 'black', color: '#1a1a1a', isCorrect: true },
+      { id: 'red', color: '#ff3e3e', isCorrect: false }
     ],
-    switches: [{ id: 'A', label: 'A', isCorrect: true }],
-    levers: [{ id: 'B', label: 'B', isCorrect: true }],
+    switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+    levers: [],
     knobs: [{ id: 'K1', label: 'DIAL', isCorrect: 2, current: 0 }],
     keys: [],
     hasKeypad: false,
@@ -49,58 +49,59 @@ const INITIAL_CONFIG = [
     id: 2,
     type: 'crate',
     title: "LEVEL 02",
-    clue: "CODE 3111. ARM B & C. KEY MUST BE TURNED. DIAL AT 0. CUT PURPLE.",
+    clue: "All Keys Horizontal. In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I? (Wire Target - Green) I am the color of the 'Go' button on the Kraken-repelling machine. What am I? (Button Target - Green)",
     timer: 45,
     wires: [
-      { id: 'purple', color: '#a855f7', isCorrect: true },
-      { id: 'green', color: '#22c55e', isCorrect: false }
+      { id: 'green', color: '#22c55e', isCorrect: true },
+      { id: 'purple', color: '#a855f7', isCorrect: false }
     ],
     switches: [
-      { id: 'A', label: 'A', isCorrect: false },
+      { id: 'A', label: 'A', isCorrect: true },
       { id: 'B', label: 'B', isCorrect: true },
       { id: 'C', label: 'C', isCorrect: true }
     ],
     levers: [],
-    knobs: [{ id: 'K1', label: 'DIAL', isCorrect: 0, current: 1 }],
+    knobs: [],
     keys: [{ id: 'K1', label: 'SECURE', isCorrect: true, state: false }],
-    hasKeypad: true,
-    keypadCode: "3111",
+    hasKeypad: false,
+    keypadCode: "",
     hasButtons: true,
     batteries: 3,
     ports: ["Parallel", "RJ-45"],
     chips: [],
     resistors: [{ id: 'R1', color: '#facc15' }],
-    leds: [{ id: 'L1', label: 'LINK', color: '#22c55e', linkedSwitch: 'B' }, { id: 'L2', label: 'DATA', color: '#3b82f6', linkedSwitch: 'C' }],
+    leds: [{ id: 'L1', label: 'GO', color: '#22c55e', linkedSwitch: 'A' }],
     hasExit: true
   },
   {
     id: 3,
     type: 'bundle',
     title: "LEVEL 03",
-    clue: "ARM ALL. ALL KEYS VERTICAL. CODE 1234. CUT GREEN.",
+    clue: "All Security Keys ON. In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I? (Wire Target - Yellow) A cannon-heating resistor of 21 Ω carries 21 A before firing. Power dissipated? (Safe Code - 9261)",
     timer: 40,
     wires: [
-      { id: 'green', color: '#22c55e', isCorrect: true },
-      { id: 'orange', color: '#f97316', isCorrect: false }
+      { id: 'yellow', color: '#facc15', isCorrect: true },
+      { id: 'green', color: '#22c55e', isCorrect: false }
     ],
     switches: [
       { id: 'A', label: 'A', isCorrect: true },
       { id: 'B', label: 'B', isCorrect: true }
     ],
-    levers: [{ id: 'X', label: 'X', isCorrect: true }],
+    levers: [],
     knobs: [],
     keys: [
       { id: 'K1', label: 'KY1', isCorrect: true, state: false },
-      { id: 'K2', label: 'KY2', isCorrect: true, state: false }
+      { id: 'K2', label: 'KY2', isCorrect: true, state: false },
+      { id: 'K3', label: 'KY3', isCorrect: true, state: false }
     ],
-    hasKeypad: true,
-    keypadCode: "1234",
-    hasButtons: true,
+    hasKeypad: false,
+    keypadCode: "9261",
+    hasButtons: false,
     batteries: 4,
-    ports: ["DVI", "Parallel", "Serial"],
-    chips: [{ id: 'C1', label: 'CPU-X', isCorrect: true }, { id: 'C2', label: 'BIO-2', isCorrect: false }],
-    resistors: [{ id: 'R1', color: '#9333ea' }, { id: 'R2', color: '#db2777' }],
-    leds: [{ id: 'L1', label: 'SYNC', color: '#a855f7', linkedSwitch: 'A' }],
+    ports: ["DVI", "Serial"],
+    chips: [{ id: 'C1', label: 'CPU-X', isCorrect: true }],
+    resistors: [{ id: 'R1', color: '#facc15' }],
+    leds: [{ id: 'L1', label: 'PWR', color: '#22c55e', linkedSwitch: 'A' }],
     hasExit: true
   }
 ];
