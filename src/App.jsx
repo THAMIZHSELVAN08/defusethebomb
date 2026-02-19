@@ -13,106 +13,264 @@ import {
   ShieldAlert,
   Coins,
   MousePointer2,
-  Power
+  Power,
+  Upload,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import './App.css';
 
 // --- Constants ---
-const INITIAL_CONFIG = [
-  {
-    id: 1,
-    type: 'cylinder',
-    title: "LEVEL 01",
-    clue: "Arm A,B. All Keys Horizontal. I am the darkest night at sea. In the world of direct current (DC), I am the 'ground'. What color am I? (Wire Target - Black)",
-    timer: 60,
-    wires: [
-      { id: 'black', color: '#1a1a1a', isCorrect: true },
-      { id: 'red', color: '#ff3e3e', isCorrect: false }
-    ],
-    switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
-    levers: [],
-    knobs: [{ id: 'K1', label: 'DIAL', isCorrect: 2, current: 0 }],
-    keys: [],
-    hasKeypad: false,
-    keypadCode: "",
-    hasButtons: false,
-    batteries: 2,
-    ports: ["DVI", "Serial"],
-    chips: [{ id: 'C1', label: 'MT-40', isCorrect: true }],
-    resistors: [{ id: 'R1', color: '#b91c1c' }, { id: 'R2', color: '#1d4ed8' }],
-    leds: [{ id: 'L1', label: 'PWR', color: '#ef4444', linkedSwitch: 'A' }],
-    hasExit: true
-  },
-  {
-    id: 2,
-    type: 'crate',
-    title: "LEVEL 02",
-    clue: "All Keys Horizontal. In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I? (Wire Target - Green) I am the color of the 'Go' button on the Kraken-repelling machine. What am I? (Button Target - Green)",
-    timer: 45,
-    wires: [
-      { id: 'green', color: '#22c55e', isCorrect: true },
-      { id: 'purple', color: '#a855f7', isCorrect: false }
-    ],
-    switches: [
-      { id: 'A', label: 'A', isCorrect: true },
-      { id: 'B', label: 'B', isCorrect: true },
-      { id: 'C', label: 'C', isCorrect: true }
-    ],
-    levers: [],
-    knobs: [],
-    keys: [{ id: 'K1', label: 'SECURE', isCorrect: true, state: false }],
-    hasKeypad: false,
-    keypadCode: "",
-    hasButtons: true,
-    buttons: [
-      { id: 'BTN1', color: '#22c55e', isCorrect: true }
-    ],
-    batteries: 3,
-    ports: ["Parallel", "RJ-45"],
-    chips: [],
-    resistors: [{ id: 'R1', color: '#facc15' }],
-    leds: [{ id: 'L1', label: 'GO', color: '#22c55e', linkedSwitch: 'A' }],
-    hasExit: true
-  },
-  {
-    id: 3,
-    type: 'bundle',
-    title: "LEVEL 03",
-    clue: "All Security Keys ON. In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I? (Wire Target - Yellow) A cannon-heating resistor of 21 Ω carries 21 A before firing. Power dissipated? (Safe Code - 9261)",
-    timer: 40,
-    wires: [
-      { id: 'yellow', color: '#facc15', isCorrect: true },
-      { id: 'green', color: '#22c55e', isCorrect: false }
-    ],
-    switches: [
-      { id: 'A', label: 'A', isCorrect: true },
-      { id: 'B', label: 'B', isCorrect: true }
-    ],
-    levers: [],
-    knobs: [],
-    keys: [
-      { id: 'K1', label: 'KY1', isCorrect: true, state: false },
-      { id: 'K2', label: 'KY2', isCorrect: true, state: false },
-      { id: 'K3', label: 'KY3', isCorrect: true, state: false }
-    ],
-    hasKeypad: false,
-    keypadCode: "9261",
-    hasButtons: false,
-    batteries: 4,
-    ports: ["DVI", "Serial"],
-    chips: [{ id: 'C1', label: 'CPU-X', isCorrect: true }],
-    resistors: [{ id: 'R1', color: '#facc15' }],
-    leds: [{ id: 'L1', label: 'PWR', color: '#22c55e', linkedSwitch: 'A' }],
-    hasExit: true
-  }
+const LEVEL_QUESTION_POOLS = {
+  1: [
+    {
+      clue: "Arm A,B. All Keys Horizontal. I am the darkest night at sea. In the world of direct current (DC), I am the \"ground\" where all paths eventually lead. What color am I?",
+      wires: [{ id: 'black', color: '#1a1a1a', isCorrect: true }, { id: 'red', color: '#ff3e3e', isCorrect: false }, { id: 'blue', color: '#1d4ed8', isCorrect: false }, { id: 'brown', color: '#78350f', isCorrect: false }, { id: 'grey', color: '#6b7280', isCorrect: false }, { id: 'purple', color: '#a855f7', isCorrect: false }],
+      switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 60, hasExit: true,
+      batteries: 2, ports: ['Serial']
+    },
+    {
+      clue: "Arm B,C. All Keys Vertical. I am the color in the sunset. On a resistor, I stand for the number three. What color am I?",
+      wires: [{ id: 'orange', color: '#f97316', isCorrect: true }, { id: 'white', color: '#ffffff', isCorrect: false }, { id: 'green', color: '#22c55e', isCorrect: false }, { id: 'red', color: '#ff3e3e', isCorrect: false }, { id: 'yellow', color: '#facc15', isCorrect: false }, { id: 'pink', color: '#ec4899', isCorrect: false }],
+      switches: [{ id: 'B', label: 'B', isCorrect: true }, { id: 'C', label: 'C', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#f97316' }]
+    },
+    {
+      clue: "All Keys Horizontal. Clock to 270 degree. I am the rarest color on the ocean, First on the Rainbow. On the bands of a component, I represent the lucky number seven. What color am I?",
+      wires: [{ id: 'purple', color: '#a855f7', isCorrect: true }, { id: 'black', color: '#1a1a1a', isCorrect: false }, { id: 'yellow', color: '#facc15', isCorrect: false }, { id: 'blue', color: '#1d4ed8', isCorrect: false }, { id: 'pink', color: '#ec4899', isCorrect: false }, { id: 'indigo', color: '#6366f1', isCorrect: false }],
+      switches: [], keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }],
+      knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 3 }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#a855f7' }]
+    },
+    {
+      clue: "Arm A. Clock to Zero. I am the color of the sharpest needle in the surgeon's kit. I am the probe you hold in your right hand. I seek out the \"Hot\" side of the circuit while my brother, Black, stays grounded. What color am I?",
+      wires: [{ id: 'red', color: '#ff3e3e', isCorrect: true }, { id: 'blue', color: '#1d4ed8', isCorrect: false }, { id: 'white', color: '#ffffff', isCorrect: false }, { id: 'orange', color: '#f97316', isCorrect: false }, { id: 'pink', color: '#ec4899', isCorrect: false }, { id: 'brown', color: '#78350f', isCorrect: false }],
+      switches: [{ id: 'A', label: 'A', isCorrect: true }], knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 60, hasExit: true,
+      leds: [{ id: 'L1', label: 'HOT', color: '#ff0000', linkedSwitch: 'A' }]
+    },
+    {
+      clue: "Arm B,A. I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?",
+      wires: [{ id: 'green', color: '#22c55e', isCorrect: true }, { id: 'orange', color: '#f97316', isCorrect: false }, { id: 'purple', color: '#a855f7', isCorrect: false }, { id: 'lime', color: '#84cc16', isCorrect: false }, { id: 'teal', color: '#14b8a6', isCorrect: false }, { id: 'cyan', color: '#06b6d4', isCorrect: false }],
+      switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }], timer: 60, hasExit: true,
+      leds: [{ id: 'L1', label: 'GO', color: '#22c55e', linkedSwitch: 'A' }]
+    },
+    {
+      clue: "Arm B. Lever Down. In the pirate's code of colors (the resistor chart), I represent the number 2. If you see me twice, you've got twenty-two. What color am I?",
+      wires: [{ id: 'red', color: '#ff3e3e', isCorrect: true }, { id: 'brown', color: '#78350f', isCorrect: false }, { id: 'yellow', color: '#facc15', isCorrect: false }, { id: 'orange', color: '#f97316', isCorrect: false }, { id: 'pink', color: '#ec4899', isCorrect: false }, { id: 'black', color: '#1a1a1a', isCorrect: false }],
+      switches: [{ id: 'B', label: 'B', isCorrect: true }], levers: [{ id: 'L1', label: 'LEV', isCorrect: true }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#ff3e3e' }]
+    },
+    {
+      clue: "Arm A. All Keys Vertical. On the pirate's code of colored bands, I am the number 6. I'm as deep as the ocean and twice as steady. What color am I?",
+      wires: [{ id: 'blue', color: '#1d4ed8', isCorrect: true }, { id: 'black', color: '#1a1a1a', isCorrect: false }, { id: 'white', color: '#ffffff', isCorrect: false }, { id: 'cyan', color: '#06b6d4', isCorrect: false }, { id: 'indigo', color: '#6366f1', isCorrect: false }, { id: 'teal', color: '#14b8a6', isCorrect: false }],
+      switches: [{ id: 'A', label: 'A', isCorrect: true }], keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#1d4ed8' }]
+    },
+    {
+      clue: "Arm B. Clock to 0. In the secret language of resistors, if you see my band, it means the number 4. What color am I?",
+      wires: [{ id: 'yellow', color: '#facc15', isCorrect: true }, { id: 'purple', color: '#a855f7', isCorrect: false }, { id: 'green', color: '#22c55e', isCorrect: false }, { id: 'orange', color: '#f97316', isCorrect: false }, { id: 'lime', color: '#84cc16', isCorrect: false }, { id: 'gold', color: '#eab308', isCorrect: false }],
+      switches: [{ id: 'B', label: 'B', isCorrect: true }], knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#facc15' }]
+    },
+    {
+      clue: "All Keys Horizontal. In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I?",
+      wires: [{ id: 'green', color: '#22c55e', isCorrect: true }, { id: 'red', color: '#ff3e3e', isCorrect: false }, { id: 'orange', color: '#f97316', isCorrect: false }, { id: 'lime', color: '#84cc16', isCorrect: false }, { id: 'teal', color: '#14b8a6', isCorrect: false }, { id: 'cyan', color: '#06b6d4', isCorrect: false }],
+      switches: [], keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 60, hasExit: true,
+      resistors: [{ id: 'R1', color: '#22c55e' }]
+    }
+  ],
+  2: [
+    {
+      clue: "Arm A,B. All Keys Horizontal.\n● I am the darkest night at sea. In the world of direct current (DC), I am the \"ground\". What color am I?\n● I am the color in the sunset. On a resistor, I stand for the number three. What color am I?",
+      wires: [{ id: 'w1', color: '#1a1a1a', isCorrect: true }, { id: 'w2', color: '#f97316', isCorrect: true }, { id: 'w3', color: '#ff3e3e', isCorrect: false }, { id: 'w4', color: '#6b7280', isCorrect: false }, { id: 'w5', color: '#78350f', isCorrect: false }, { id: 'w6', color: '#1d4ed8', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#1a1a1a', isCorrect: true }, { id: 'B2', color: '#f97316', isCorrect: true }, { id: 'B3', color: '#ff3e3e', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm B,C. All Keys Vertical.\n● I am the color in the sunset. On a resistor, I stand for the number three. What color am I?\n● I am the rarest color on the ocean, First on the Rainbow. On the bands of a component, I represent the lucky number seven.",
+      wires: [{ id: 'w1', color: '#f97316', isCorrect: true }, { id: 'w2', color: '#a855f7', isCorrect: true }, { id: 'w3', color: '#1d4ed8', isCorrect: false }, { id: 'w4', color: '#ff3e3e', isCorrect: false }, { id: 'w5', color: '#6366f1', isCorrect: false }, { id: 'w6', color: '#ec4899', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#f97316', isCorrect: true }, { id: 'B2', color: '#a855f7', isCorrect: true }, { id: 'B3', color: '#1d4ed8', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }, { id: 'C', label: 'C', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 45, hasExit: false
+    },
+    {
+      clue: "All Keys Horizontal. Clock to 270 degree.\n● I am the rarest color on the ocean, First on the Rainbow. On the bands of a component, I represent the lucky number seven. Who am I?\n● I am the color of the sharpest needle in the surgeon's kit. I am the probe you hold in your right hand. I seek out the \"Hot\" side of the circuit while my brother, Black, stays grounded. What color am I?",
+      wires: [{ id: 'w1', color: '#a855f7', isCorrect: true }, { id: 'w2', color: '#ff3e3e', isCorrect: true }, { id: 'w3', color: '#ffffff', isCorrect: false }, { id: 'w4', color: '#6366f1', isCorrect: false }, { id: 'w5', color: '#ec4899', isCorrect: false }, { id: 'w6', color: '#1a1a1a', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#a855f7', isCorrect: true }, { id: 'B2', color: '#ff3e3e', isCorrect: true }, { id: 'B3', color: '#ffffff', isCorrect: false }], hasButtons: true, knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 3 }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm A. Clock to Zero.\n● I am the color of the sharpest needle in the surgeon's kit. I am the probe you hold in your right hand. I seek out the \"Hot\" side of the circuit while my brother, Black, stays grounded. What color am I?\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?",
+      wires: [{ id: 'w1', color: '#ff3e3e', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: true }, { id: 'w3', color: '#1a1a1a', isCorrect: false }, { id: 'w4', color: '#f97316', isCorrect: false }, { id: 'w5', color: '#ec4899', isCorrect: false }, { id: 'w6', color: '#84cc16', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#ff3e3e', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: true }, { id: 'B3', color: '#1a1a1a', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }],
+      knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm B,A.\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?\n● In the pirate's code of colors (the resistor chart), I represent the number 2. If you see me twice, you've got twenty-two. What color am I?",
+      wires: [{ id: 'w1', color: '#22c55e', isCorrect: true }, { id: 'w2', color: '#ff3e3e', isCorrect: true }, { id: 'w3', color: '#1d4ed8', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#f97316', isCorrect: false }, { id: 'w6', color: '#78350f', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#22c55e', isCorrect: true }, { id: 'B2', color: '#ff3e3e', isCorrect: true }, { id: 'B3', color: '#1d4ed8', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+      timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm B. Lever Down.\n● In the pirate's code of colors (the resistor chart), I represent the number 2. If you see me twice, you've got twenty-two. What color am I?\n● All Keys Vertical. On the pirate's code of colored bands, I am the number 6. I'm as deep as the ocean and twice as steady. What color am I?",
+      wires: [{ id: 'w1', color: '#ff3e3e', isCorrect: true }, { id: 'w2', color: '#1d4ed8', isCorrect: true }, { id: 'w3', color: '#78350f', isCorrect: false }, { id: 'w4', color: '#f97316', isCorrect: false }, { id: 'w5', color: '#06b6d4', isCorrect: false }, { id: 'w6', color: '#6366f1', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#ff3e3e', isCorrect: true }, { id: 'B2', color: '#1d4ed8', isCorrect: true }, { id: 'B3', color: '#78350f', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }],
+      levers: [{ id: 'L1', label: 'LEV', isCorrect: true }], keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm A. All Keys Vertical.\n● Clock to 0. In the secret language of resistors, if you see my band, it means the number 4. What color am I?\n● On the pirate's code of colored bands, I am the number 6. I'm as deep as the ocean and twice as steady. What color am I?",
+      wires: [{ id: 'w1', color: '#facc15', isCorrect: true }, { id: 'w2', color: '#1d4ed8', isCorrect: true }, { id: 'w3', color: '#a855f7', isCorrect: false }, { id: 'w4', color: '#eab308', isCorrect: false }, { id: 'w5', color: '#06b6d4', isCorrect: false }, { id: 'w6', color: '#14b8a6', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#facc15', isCorrect: true }, { id: 'B2', color: '#1d4ed8', isCorrect: true }, { id: 'B3', color: '#a855f7', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 45, hasExit: false
+    },
+    {
+      clue: "Arm B. Clock to 0.\n● In the secret language of resistors, if you see my band, it means the number 4. What color am I?\n● In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I?",
+      wires: [{ id: 'w1', color: '#facc15', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: true }, { id: 'w3', color: '#f97316', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#eab308', isCorrect: false }, { id: 'w6', color: '#14b8a6', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#facc15', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: true }, { id: 'B3', color: '#f97316', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }],
+      knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 45, hasExit: false
+    },
+    {
+      clue: "All Keys Horizontal.\n● In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I?\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?",
+      wires: [{ id: 'w1', color: '#22c55e', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: false }, { id: 'w3', color: '#ff3e3e', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#14b8a6', isCorrect: false }, { id: 'w6', color: '#06b6d4', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#22c55e', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: false }, { id: 'B3', color: '#ff3e3e', isCorrect: false }], hasButtons: true, keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }],
+      timer: 45, hasExit: false
+    }
+  ],
+  3: [
+    {
+      clue: "Arm A,B. All Keys Horizontal.\n● I am the darkest night at sea. In the world of direct current (DC), I am the \"ground\". What color am I?\n● I am the color in the sunset. On a resistor, I stand for the number three. What color am I?",
+      wires: [{ id: 'w1', color: '#1a1a1a', isCorrect: true }, { id: 'w2', color: '#f97316', isCorrect: true }, { id: 'w3', color: '#ff3e3e', isCorrect: false }, { id: 'w4', color: '#6b7280', isCorrect: false }, { id: 'w5', color: '#78350f', isCorrect: false }, { id: 'w6', color: '#1d4ed8', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#1a1a1a', isCorrect: true }, { id: 'B2', color: '#f97316', isCorrect: true }, { id: 'B3', color: '#ff3e3e', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm B,C. All Keys Vertical.\n● I am the color in the sunset. On a resistor, I stand for the number three. What color am I?\n● I am the rarest color on the ocean, First on the Rainbow. On the bands of a component, I represent the lucky number seven.",
+      wires: [{ id: 'w1', color: '#f97316', isCorrect: true }, { id: 'w2', color: '#a855f7', isCorrect: true }, { id: 'w3', color: '#1d4ed8', isCorrect: false }, { id: 'w4', color: '#ff3e3e', isCorrect: false }, { id: 'w5', color: '#6366f1', isCorrect: false }, { id: 'w6', color: '#ec4899', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#f97316', isCorrect: true }, { id: 'B2', color: '#a855f7', isCorrect: true }, { id: 'B3', color: '#1d4ed8', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }, { id: 'C', label: 'C', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 40, hasExit: false
+    },
+    {
+      clue: "All Keys Horizontal. Clock to 270 degree.\n● I am the rarest color on the ocean, First on the Rainbow. On the bands of a component, I represent the lucky number seven. Who am I?\n● I am the color of the sharpest needle in the surgeon's kit. I am the probe you hold in your right hand. I seek out the \"Hot\" side of the circuit while my brother, Black, stays grounded. What color am I?",
+      wires: [{ id: 'w1', color: '#a855f7', isCorrect: true }, { id: 'w2', color: '#ff3e3e', isCorrect: true }, { id: 'w3', color: '#ffffff', isCorrect: false }, { id: 'w4', color: '#6366f1', isCorrect: false }, { id: 'w5', color: '#ec4899', isCorrect: false }, { id: 'w6', color: '#1a1a1a', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#a855f7', isCorrect: true }, { id: 'B2', color: '#ff3e3e', isCorrect: true }, { id: 'B3', color: '#ffffff', isCorrect: false }], hasButtons: true, knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 3 }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }], timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm A. Clock to Zero.\n● I am the color of the sharpest needle in the surgeon's kit. I am the probe you hold in your right hand. I seek out the \"Hot\" side of the circuit while my brother, Black, stays grounded. What color am I?\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?",
+      wires: [{ id: 'w1', color: '#ff3e3e', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: true }, { id: 'w3', color: '#1a1a1a', isCorrect: false }, { id: 'w4', color: '#f97316', isCorrect: false }, { id: 'w5', color: '#ec4899', isCorrect: false }, { id: 'w6', color: '#84cc16', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#ff3e3e', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: true }, { id: 'B3', color: '#1a1a1a', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }],
+      knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm B,A.\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?\n● In the pirate's code of colors (the resistor chart), I represent the number 2. If you see me twice, you've got twenty-two. What color am I?",
+      wires: [{ id: 'w1', color: '#22c55e', isCorrect: true }, { id: 'w2', color: '#ff3e3e', isCorrect: true }, { id: 'w3', color: '#1d4ed8', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#f97316', isCorrect: false }, { id: 'w6', color: '#78350f', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#22c55e', isCorrect: true }, { id: 'B2', color: '#ff3e3e', isCorrect: true }, { id: 'B3', color: '#1d4ed8', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }, { id: 'B', label: 'B', isCorrect: true }],
+      timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm B. Lever Down.\n● In the pirate's code of colors (the resistor chart), I represent the number 2. If you see me twice, you've got twenty-two. What color am I?\n● All Keys Vertical. On the pirate's code of colored bands, I am the number 6. I'm as deep as the ocean and twice as steady. What color am I?",
+      wires: [{ id: 'w1', color: '#ff3e3e', isCorrect: true }, { id: 'w2', color: '#1d4ed8', isCorrect: true }, { id: 'w3', color: '#78350f', isCorrect: false }, { id: 'w4', color: '#f97316', isCorrect: false }, { id: 'w5', color: '#06b6d4', isCorrect: false }, { id: 'w6', color: '#6366f1', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#ff3e3e', isCorrect: true }, { id: 'B2', color: '#1d4ed8', isCorrect: true }, { id: 'B3', color: '#78350f', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }],
+      levers: [{ id: 'L1', label: 'LEV', isCorrect: true }], keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm A. All Keys Vertical.\n● Clock to 0. In the secret language of resistors, if you see my band, it means the number 4. What color am I?\n● On the pirate's code of colored bands, I am the number 6. I'm as deep as the ocean and twice as steady. What color am I?",
+      wires: [{ id: 'w1', color: '#facc15', isCorrect: true }, { id: 'w2', color: '#1d4ed8', isCorrect: true }, { id: 'w3', color: '#a855f7', isCorrect: false }, { id: 'w4', color: '#eab308', isCorrect: false }, { id: 'w5', color: '#06b6d4', isCorrect: false }, { id: 'w6', color: '#14b8a6', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#facc15', isCorrect: true }, { id: 'B2', color: '#1d4ed8', isCorrect: true }, { id: 'B3', color: '#a855f7', isCorrect: false }], hasButtons: true, switches: [{ id: 'A', label: 'A', isCorrect: true }],
+      keys: [{ id: 'K1', label: 'SECURE', isCorrect: true }], knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 40, hasExit: false
+    },
+    {
+      clue: "Arm B. Clock to 0.\n● In the secret language of resistors, if you see my band, it means the number 4. What color am I?\n● In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I?",
+      wires: [{ id: 'w1', color: '#facc15', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: true }, { id: 'w3', color: '#f97316', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#eab308', isCorrect: false }, { id: 'w6', color: '#14b8a6', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#facc15', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: true }, { id: 'B3', color: '#f97316', isCorrect: false }], hasButtons: true, switches: [{ id: 'B', label: 'B', isCorrect: true }],
+      knobs: [{ id: 'K1', label: 'CLOCK', isCorrect: 0 }], timer: 40, hasExit: false
+    },
+    {
+      clue: "All Keys Horizontal.\n● In the pirate's code of resistor bands, I represent the number 5. I'm the color of a lucky clover found on a distant shore. What am I?\n● I am the color of the \"Go\" button on the Kraken-repelling machine. What am I?",
+      wires: [{ id: 'w1', color: '#22c55e', isCorrect: true }, { id: 'w2', color: '#22c55e', isCorrect: false }, { id: 'w3', color: '#ff3e3e', isCorrect: false }, { id: 'w4', color: '#84cc16', isCorrect: false }, { id: 'w5', color: '#14b8a6', isCorrect: false }, { id: 'w6', color: '#06b6d4', isCorrect: false }],
+      buttons: [{ id: 'B1', color: '#22c55e', isCorrect: true }, { id: 'B2', color: '#22c55e', isCorrect: false }, { id: 'B3', color: '#ff3e3e', isCorrect: false }], hasButtons: true, keys: [{ id: 'K1', label: 'SECURE', isCorrect: false }],
+      timer: 40, hasExit: false
+    }
+  ]
+};
+
+const MATH_POOL = [
+  { q: "A cannon-heating resistor of 21 Ω carries 21 A before firing. Power dissipated?", a: "9261" },
+  { q: "A pirate radio transmits at 4.321 kHz across the haunted seas. Frequency in Hz?", a: "4321" },
+  { q: "A shipboard generator runs at 52 Hz with 4 poles. What be its synchronous speed?", a: "1560" },
+  { q: "A transformer steps up 173 V by a ratio of 1:9. What voltage strikes the deck?", a: "1557" },
+  { q: "A 29 Ω resistor carries 13 A during a lightning strike. Power dissipated?", a: "4897" },
+  { q: "A pirate battery stores 37 coulombs at 41 V before exploding in glory. Energy stored?", a: "1517" },
+  { q: "Jack Sparrow feeds 41 V into an amplifier with gain 37. Output voltage?", a: "1517" },
+  { q: "Convert binary 1111 to decimal. Repeat the decimal value twice.", a: "1515" },
+  { q: "Hexadecimal FF to decimal. Take first two digits and repeat. (FF₁₆ = 255₁₀)", a: "2525" },
+  { q: "The Haunted Dynamo. A dynamo produces 271 V and pushes 11 A through the deck cables. Input power?", a: "2981" },
+  { q: "An 11 H inductor carries 17 A before the cannon fires. Energy stored?", a: "1591" },
+  { q: "A 17 Ω resistor carries 23 A during a storm surge. Power dissipated?", a: "8993" },
+  { q: "A 175 μF capacitor is charged to 135 V in the treasure cave. Energy stored in millijoules?", a: "1593" },
+  { q: "A 41 Ω heating coil carries 13 A while cooking sea serpent stew. Power dissipated?", a: "6929" },
+  { q: "A 9 H inductor carries 18 A during the final battle. Energy stored?", a: "1458" }
 ];
 
+const shuffle = (array) => {
+  const newArr = [...array];
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+};
+
+const generateRandomMissions = () => {
+  // Shuffle each level's question pool independently
+  // Level 1 questions shuffle among themselves only
+  const pool1 = shuffle(LEVEL_QUESTION_POOLS[1]);
+  // Level 2 questions shuffle among themselves only
+  const pool2 = shuffle(LEVEL_QUESTION_POOLS[2]);
+  // Level 3 questions shuffle among themselves only
+  const pool3 = shuffle(LEVEL_QUESTION_POOLS[3]);
+  // Math questions shuffle independently
+  const mathPool = shuffle(MATH_POOL);
+
+  const addVisualDecoys = (lvl) => {
+    return {
+      ...lvl,
+      hasExit: true,
+      batteries: Math.floor(Math.random() * 4) + 1,
+      ports: shuffle(["DVI", "Serial", "Parallel", "RJ-45", "USB-C"]).slice(0, 2),
+      chips: [
+        { id: 'C1', label: shuffle(['MT-40', 'CPU-X', 'TX-9', 'PX-1'])[0], isCorrect: true },
+        { id: 'C2', label: shuffle(['BUS-A', 'MEM-1', 'LOGIC', 'CORE'])[0], isCorrect: true }
+      ],
+      resistors: [
+        { id: 'R1', color: shuffle(['#b91c1c', '#1d4ed8', '#facc15', '#a855f7'])[0] },
+        { id: 'R2', color: shuffle(['#22c55e', '#f97316', '#1a1a1a', '#ffffff'])[0] }
+      ],
+      leds: [{ id: 'L1', label: 'PWR', color: '#ef4444', linkedSwitch: lvl.switches?.[0]?.id || '' }]
+    };
+  };
+
+  return [
+    addVisualDecoys({ ...pool1[0], id: 1, title: "LEVEL 01", type: 'cylinder' }),
+    addVisualDecoys({ ...pool2[0], id: 2, title: "LEVEL 02", type: 'crate' }),
+    {
+      ...addVisualDecoys(pool3[0]),
+      id: 3,
+      title: "LEVEL 03",
+      type: 'bundle',
+      hasKeypad: true,
+      keypadCode: mathPool[0].a,
+      clue: pool3[0].clue + "\n\n" + mathPool[0].q
+    }
+  ];
+};
+
 function App() {
-  const [rooms, setRooms] = useState({ '123456': INITIAL_CONFIG });
+  const [rooms, setRooms] = useState({ '123456': generateRandomMissions() });
   const [currentRoomCode, setCurrentRoomCode] = useState("");
-  const [config, setConfig] = useState(INITIAL_CONFIG);
+  const [config, setConfig] = useState(() => generateRandomMissions());
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
   const [gameState, setGameState] = useState('menu'); // menu, intro, ready, playing, joining, failed, success, victory
@@ -152,7 +310,7 @@ function App() {
 
   const handleGenerateRoomCode = () => {
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // Save to localStorage
     const broadcasts = JSON.parse(localStorage.getItem('broadcasts') || '{}');
     broadcasts[newCode] = {
@@ -161,11 +319,11 @@ function App() {
       accessCount: 0
     };
     localStorage.setItem('broadcasts', JSON.stringify(broadcasts));
-    
+
     const newRooms = { ...rooms, [newCode]: config };
     setRooms(newRooms);
     setCurrentRoomCode(newCode);
-    
+
     // Download as JSON file too (backup)
     const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
     const filename = `bomb_mission_${newCode}_${timestamp}.json`;
@@ -179,7 +337,7 @@ function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
     alert(`✓ MISSION BROADCASTED!\n\nROOM CODE: ${newCode}\n\nShare this code with others to play together!\nFile saved to Downloads as backup.`);
   };
 
@@ -187,11 +345,11 @@ function App() {
     // Try to get from localStorage broadcasts first
     const broadcasts = JSON.parse(localStorage.getItem('broadcasts') || '{}');
     let broadcastConfig = null;
-    
+
     if (broadcasts[joinCodeInput]) {
       broadcastConfig = broadcasts[joinCodeInput].config;
     }
-    
+
     if (broadcastConfig) {
       setConfig(broadcastConfig);
       setGameState('intro');
@@ -249,16 +407,16 @@ function App() {
     if (gameState !== 'playing' || cutWires.includes(wireId)) return;
 
     const reqSwitches = currentLevel.switches || [];
-    const switchErr = reqSwitches.some(s => (s.isCorrect && !activeSwitches[s.id]) || (!s.isCorrect && activeSwitches[s.id]));
+    const switchesDone = !reqSwitches.some(s => (s.isCorrect && !activeSwitches[s.id]) || (!s.isCorrect && activeSwitches[s.id]));
     const reqLevers = currentLevel.levers || [];
-    const leverErr = reqLevers.some(l => (l.isCorrect && !activeLevers[l.id]) || (!l.isCorrect && activeLevers[l.id]));
+    const leversDone = !reqLevers.some(l => (l.isCorrect && !activeLevers[l.id]) || (!l.isCorrect && activeLevers[l.id]));
     const reqKnobs = currentLevel.knobs || [];
-    const knobErr = reqKnobs.some(k => (knobPositions[k.id] || 0) !== k.isCorrect);
+    const knobsDone = !reqKnobs.some(k => (knobPositions[k.id] || 0) !== k.isCorrect);
     const reqKeys = currentLevel.keys || [];
-    const keyErr = reqKeys.some(k => (k.isCorrect && !keyStates[k.id]) || (!k.isCorrect && keyStates[k.id]));
+    const keysDone = !reqKeys.some(k => (k.isCorrect && !keyStates[k.id]) || (!k.isCorrect && keyStates[k.id]));
 
-    if (switchErr || leverErr || knobErr || keyErr) {
-      setFeedback("ERROR: SECURITY PROTOCOL FAILURE");
+    if (!switchesDone || !leversDone || !knobsDone || !keysDone) {
+      setFeedback("ERROR: SECURITY PROTOCOL FAILURE - VERIFY COMPONENTS");
       triggerPenalty();
       return;
     }
@@ -269,11 +427,25 @@ function App() {
       return;
     }
 
-    setCutWires(prev => [...prev, wireId]);
+    const nextCutWires = [...cutWires, wireId];
+    setCutWires(nextCutWires);
+
     if (isCorrect) {
-      setGameState('success');
-      setWallet(prev => prev + 100);
-      setFeedback("DEVICE NEUTRALIZED");
+      // Check if all correct wires are cut
+      const targetWires = currentLevel.wires.filter(w => w.isCorrect);
+      const allDone = targetWires.every(tw => nextCutWires.includes(tw.id));
+
+      if (allDone) {
+        if (currentLevel.hasButtons || currentLevel.hasExit) {
+          setFeedback("CIRCUIT SEVERED - PROCEED TO FINAL STAGE");
+        } else {
+          setGameState('success');
+          setWallet(prev => prev + 100);
+          setFeedback("DEVICE NEUTRALIZED");
+        }
+      } else {
+        setFeedback("STEP COMPLETE - SEVER REMAINING CIRCUITS");
+      }
     } else {
       setFeedback("ERROR: SYSTEM BREACH - SPEED INCREASED");
       triggerPenalty();
@@ -283,7 +455,7 @@ function App() {
   const handleExit = (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
-    
+
     // Prevent multiple clicks
     if (gameState !== 'playing' || !currentLevel.hasExit || exitActivated) return;
 
@@ -319,10 +491,10 @@ function App() {
       return;
     }
 
-    // Check if all wires are cut
-    const allWiresCut = currentLevel.wires.every(w => cutWires.includes(w.id));
+    // Check if all correct wires are cut
+    const allWiresCut = currentLevel.wires.filter(w => w.isCorrect).every(w => cutWires.includes(w.id));
     if (!allWiresCut) {
-      setFeedback("ERROR: ALL CIRCUITS MUST BE SEVERED");
+      setFeedback("ERROR: ALL TARGET CIRCUITS MUST BE SEVERED");
       return;
     }
 
@@ -555,7 +727,7 @@ function App() {
   const handleImportMissions = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -630,20 +802,28 @@ function App() {
             <h2>BOMB FACTORY CMS</h2>
             {currentRoomCode && <span className="active-room">Room: {currentRoomCode}</span>}
           </div>
-          <div className="header-actions">
-            <button className="btn-broadcast" style={{ background: 'var(--green-primary)', color: '#000' }} onClick={() => setConfig([...config, { ...INITIAL_CONFIG[0], id: Date.now(), title: `LEVEL ${config.length + 1}` }])}>
-              <Plus size={18} /> NEW MISSION
-            </button>
-            <button className="btn-broadcast" onClick={handleGenerateRoomCode}><Zap size={18} /> BROADCAST</button>
-            <button className="btn-broadcast" style={{ background: '#0088ff', color: '#fff' }} onClick={handleExportCurrentConfig}><Save size={18} /> EXPORT CONFIG</button>
-            <button className="btn-broadcast" style={{ background: '#ff9900', color: '#000' }} onClick={handleExportAllMissions}><Save size={18} /> EXPORT ALL</button>
-            <label className="btn-broadcast" style={{ background: '#9933ff', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <span>📥 IMPORT</span>
-              <input type="file" accept=".json" onChange={handleImportMissions} style={{ display: 'none' }} />
-            </label>
-            <button className="btn-close-admin" onClick={() => setIsAdmin(false)}><Save size={20} /> SAVE & EXIT</button>
-          </div>
         </header>
+        <nav className="admin-nav-bar">
+          <button className="nav-btn nav-btn-new" onClick={() => setConfig([...config, { ...INITIAL_CONFIG[0], id: Date.now(), title: `LEVEL ${config.length + 1}` }])}>
+            <Plus size={18} /> NEW MISSION
+          </button>
+          <button className="nav-btn nav-btn-broadcast" onClick={handleGenerateRoomCode}>
+            <Zap size={18} /> BROADCAST
+          </button>
+          <button className="nav-btn nav-btn-export-config" onClick={handleExportCurrentConfig}>
+            <Download size={18} /> EXPORT CONFIG
+          </button>
+          <button className="nav-btn nav-btn-export-all" onClick={handleExportAllMissions}>
+            <Download size={18} /> EXPORT ALL
+          </button>
+          <label className="nav-btn nav-btn-import">
+            <Upload size={18} /> IMPORT
+            <input type="file" accept=".json" onChange={handleImportMissions} style={{ display: 'none' }} />
+          </label>
+          <button className="nav-btn nav-btn-save-exit" onClick={() => setIsAdmin(false)}>
+            <Save size={18} /> SAVE & EXIT
+          </button>
+        </nav>
         <div className="admin-body">
           {config.map((lvl, idx) => (
             <div key={idx} className="level-config-block">
@@ -860,8 +1040,8 @@ function App() {
                   <div key={code} className="broadcast-card">
                     <div className="broadcast-header">
                       <span className="broadcast-code">{code}</span>
-                      <button 
-                        className="btn-del" 
+                      <button
+                        className="btn-del"
                         onClick={() => {
                           const newRooms = { ...rooms };
                           delete newRooms[code];
@@ -1003,7 +1183,7 @@ function App() {
                       <h2>EXPERT NEUTRALIZER</h2>
                       <div className="status-bar victory">ALL THREATS CLEARED</div>
                       <p className="res-msg">Workshop secured. Final Reward: <span className="gold-text">${wallet}</span></p>
-                      <button className="retry-btn-p success" onClick={() => { setCurrentLevelIdx(0); setGameState('menu'); }}>RETURN TO COMMAND</button>
+                      <button className="retry-btn-p success" onClick={() => { setConfig(generateRandomMissions()); setCurrentLevelIdx(0); setGameState('menu'); }}>RETURN TO COMMAND</button>
                     </>
                   ) : (
                     <>
@@ -1235,26 +1415,38 @@ function App() {
                         style={{ '--btn-color': btn.color }}
                         onClick={() => {
                           if (gameState !== 'playing' || buttonPressed[btn.id]) return;
-                          
+
                           const reqSwitches = currentLevel.switches || [];
                           const switchErr = reqSwitches.some(s => (s.isCorrect && !activeSwitches[s.id]) || (!s.isCorrect && activeSwitches[s.id]));
                           const reqLevers = currentLevel.levers || [];
                           const leverErr = reqLevers.some(l => (l.isCorrect && !activeLevers[l.id]) || (!l.isCorrect && activeLevers[l.id]));
-                          
-                          if (switchErr || leverErr) {
-                            setFeedback('ERROR: Verify switch/lever positions');
+                          const reqKnobs = currentLevel.knobs || [];
+                          const knobErr = reqKnobs.some(k => (knobPositions[k.id] || 0) !== k.isCorrect);
+                          const reqKeys = currentLevel.keys || [];
+                          const keyErr = reqKeys.some(k => (k.isCorrect && !keyStates[k.id]) || (!k.isCorrect && keyStates[k.id]));
+
+                          if (switchErr || leverErr || knobErr || keyErr) {
+                            setFeedback('ERROR: Verify all security component states');
                             setIsPenaltyActive(true);
                             setTimeout(() => setIsPenaltyActive(false), 500);
                             return;
                           }
-                          
+
                           if (!btn.isCorrect) {
                             setFeedback('ERROR: Wrong button target');
                             setIsPenaltyActive(true);
                             setTimeout(() => setIsPenaltyActive(false), 500);
                             return;
                           }
-                          
+
+                          const allWiresCut = currentLevel.wires.filter(w => w.isCorrect).every(w => cutWires.includes(w.id));
+                          if (!allWiresCut) {
+                            setFeedback("ERROR: SEVER WIRES BEFORE DETONATION");
+                            setIsPenaltyActive(true);
+                            setTimeout(() => setIsPenaltyActive(false), 500);
+                            return;
+                          }
+
                           setButtonPressed(prev => ({ ...prev, [btn.id]: true }));
                           setFeedback('✓ Button pressed - module disarmed');
                           checkVictory();
