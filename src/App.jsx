@@ -150,39 +150,47 @@ function App() {
     setGameState('menu');
   };
 
-  const handleGenerateRoomCode = async () => {
+  const handleGenerateRoomCode = () => {
     const newCode = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Save to Firebase
-    const success = await saveBroadcast(newCode, config);
-    if (success) {
-      const newRooms = { ...rooms, [newCode]: config };
-      setRooms(newRooms);
-      setCurrentRoomCode(newCode);
-      
-      // Download as JSON file too (backup)
-      const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
-      const filename = `bomb_mission_${newCode}_${timestamp}.json`;
-      const dataStr = JSON.stringify({ roomCode: newCode, config: config, timestamp: new Date().toISOString() }, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      alert(`✓ MISSION BROADCASTED!\n\nROOM CODE: ${newCode}\n\nShare this code with others to play together!\nFile saved to Downloads as backup.`);
-    } else {
-      alert('✗ Error broadcasting mission. Please check Firebase config.');
-    }
+    // Save to localStorage
+    const broadcasts = JSON.parse(localStorage.getItem('broadcasts') || '{}');
+    broadcasts[newCode] = {
+      config,
+      createdAt: new Date().toISOString(),
+      accessCount: 0
+    };
+    localStorage.setItem('broadcasts', JSON.stringify(broadcasts));
+    
+    const newRooms = { ...rooms, [newCode]: config };
+    setRooms(newRooms);
+    setCurrentRoomCode(newCode);
+    
+    // Download as JSON file too (backup)
+    const timestamp = new Date().toLocaleString().replace(/[\/:\s]/g, '_');
+    const filename = `bomb_mission_${newCode}_${timestamp}.json`;
+    const dataStr = JSON.stringify({ roomCode: newCode, config: config, timestamp: new Date().toISOString() }, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(`✓ MISSION BROADCASTED!\n\nROOM CODE: ${newCode}\n\nShare this code with others to play together!\nFile saved to Downloads as backup.`);
   };
 
-  const handleJoinRoom = async () => {
-    // First try to get from Firebase
-    const broadcastConfig = await getBroadcast(joinCodeInput);
+  const handleJoinRoom = () => {
+    // Try to get from localStorage broadcasts first
+    const broadcasts = JSON.parse(localStorage.getItem('broadcasts') || '{}');
+    let broadcastConfig = null;
+    
+    if (broadcasts[joinCodeInput]) {
+      broadcastConfig = broadcasts[joinCodeInput].config;
+    }
     
     if (broadcastConfig) {
       setConfig(broadcastConfig);
@@ -192,7 +200,7 @@ function App() {
       // Also save to local rooms for reference
       setRooms(prev => ({ ...prev, [joinCodeInput]: broadcastConfig }));
     } else if (rooms[joinCodeInput]) {
-      // Fallback to local rooms if not in Firebase
+      // Fallback to local rooms if not in broadcasts
       setConfig(rooms[joinCodeInput]);
       setGameState('intro');
       setCurrentLevelIdx(0);
